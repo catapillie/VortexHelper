@@ -61,9 +61,8 @@ public class LavenderBooster : Booster
             {
                 Audio.Play(SFX.game_05_redbooster_end, player.Center);
                 PurpleBooster.LaunchPlayerParticles(player, player.DashDir, P_BurstExplodeLavender);
-                DynamicData dyn = DynamicData.For(player);
-                dyn.Set(PurpleBooster.QUALITYOFLIFEUPDATE, l.QoL);
-                PurpleBooster.PurpleBoosterExplodeLaunch(player, dyn, self.Center - player.DashDir, null, -1f);
+                VortexHelperModule.SessionProperties.BoosterQoL = false;
+                PurpleBooster.PurpleBoosterExplodeLaunch(player, self.Center - player.DashDir, null, -1f);
             }
         }
 

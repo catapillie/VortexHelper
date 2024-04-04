@@ -249,7 +249,7 @@ public class BowlPuffer : Actor
     public bool Dangerous(HoldableCollider hc)
         => !this.Hold.IsHeld && this.Speed != Vector2.Zero && this.hitSeeker != hc;
 
-    protected override void OnSquish(CollisionData data)
+    public override void OnSquish(CollisionData data)
     {
         if (TrySquishWiggle(data) || this.state is States.Gone)
             return;

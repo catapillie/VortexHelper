@@ -18,11 +18,7 @@ namespace Celeste.Mod.VortexHelper.Entities;
 [Tracked]
 public class PurpleBooster : Entity
 {
-    // TEMPORARY - MonoMod has a bug rn that crashes if you use DynamicData setting on a Nullable`1
-    private static FieldInfo player_LaunchApproachX = typeof(Player).GetField("launchApproachX", BindingFlags.Instance | BindingFlags.NonPublic);
-
     internal const string POSSIBLE_EARLY_DASHSPEED = "purpleBoostPossibleEarlyDashSpeed";
-    internal const string QUALITYOFLIFEUPDATE = "purpleBoostQoL";
 
     private readonly Sprite sprite;
     private readonly Wiggler wiggler;
@@ -135,9 +131,8 @@ public class PurpleBooster : Entity
     {
         player.StateMachine.State = VortexHelperModule.PurpleBoosterState;
         player.Speed = Vector2.Zero;
-        DynamicData playerData = DynamicData.For(player);
-        playerData.Set("boostTarget", booster.Center);
-        playerData.Set(QUALITYOFLIFEUPDATE, booster.QoL);
+        player.boostTarget = booster.Center;
+        VortexHelperModule.SessionProperties.BoosterQoL = booster.QoL;
         booster.StartedBoosting = true;
     }
 
@@ -331,9 +326,8 @@ public class PurpleBooster : Entity
     // TODO: Merge the two states into one. Don't know why I separated them...
 
     // Inside the Purple Booster
-    public static void PurpleBoostBegin()
+    public static void PurpleBoostBegin(Player player)
     {
-        Util.TryGetPlayer(out Player player);
         player.CurrentBooster = null;
 
         // Fixes hair sticking out of the bubble sprite when entering it ducking.
@@ -361,12 +355,9 @@ public class PurpleBooster : Entity
         player.Drop();
     }
 
-    public static int PurpleBoostUpdate()
+    public static int PurpleBoostUpdate(Player player)
     {
-        Util.TryGetPlayer(out Player player);
-        DynamicData playerData = DynamicData.For(player);
-
-        Vector2 boostTarget = playerData.Get<Vector2>("boostTarget");
+        Vector2 boostTarget = player.boostTarget;
         Vector2 value = Input.Aim.Value * 3f;
         Vector2 vector = Calc.Approach(player.ExactPosition, boostTarget - player.Collider.Center + value, 80f * Engine.DeltaTime);
 
@@ -394,30 +385,23 @@ public class PurpleBooster : Entity
         return VortexHelperModule.PurpleBoosterState;
     }
 
-    public static void PurpleBoostEnd()
+    public static void PurpleBoostEnd(Player player)
     {
-        Util.TryGetPlayer(out Player player);
-        DynamicData playerData = DynamicData.For(player);
-        Vector2 boostTarget = playerData.Get<Vector2>("boostTarget");
-        Vector2 vector = (boostTarget - player.Collider.Center).Floor();
+        Vector2 vector = (player.boostTarget - player.Collider.Center).Floor();
         player.MoveToX(vector.X, null);
         player.MoveToY(vector.Y, null);
     }
 
-    public static IEnumerator PurpleBoostCoroutine()
+    public static IEnumerator PurpleBoostCoroutine(Player player)
     {
         yield return 0.3f;
-
-        Util.TryGetPlayer(out Player player);
         player.StateMachine.State = VortexHelperModule.PurpleBoosterDashState;
     }
 
     // Arc Motion
-    public static void PurpleDashingBegin()
+    public static void PurpleDashingBegin(Player player)
     {
         Celeste.Freeze(0.05f); // this freeze makes fastbubbling much more lenient
-
-        Util.TryGetPlayer(out Player player);
         DynamicData playerData = DynamicData.For(player);
         player.DashDir = Input.GetAimVector(player.Facing);
         playerData.Set(POSSIBLE_EARLY_DASHSPEED, Vector2.Zero);
@@ -435,11 +419,10 @@ public class PurpleBooster : Entity
         }
     }
 
-    public static int PurpleDashingUpdate()
+    public static int PurpleDashingUpdate(Player player)
     {
-        Util.TryGetPlayer(out Player player);
         DynamicData playerData = DynamicData.For(player);
-        bool QoL = playerData.Get(QUALITYOFLIFEUPDATE) is bool b && b;
+        bool QoL = VortexHelperModule.SessionProperties.BoosterQoL;
         if (Input.DashPressed || Input.CrouchDashPressed)
         {
             if (QoL) player.Speed += playerData.Get<Vector2>(POSSIBLE_EARLY_DASHSPEED);
@@ -463,15 +446,14 @@ public class PurpleBooster : Entity
         return VortexHelperModule.PurpleBoosterDashState;
     }
 
-    public static IEnumerator PurpleDashingCoroutine()
+    public static IEnumerator PurpleDashingCoroutine(Player player)
     {
         float t = 0f;
-        Util.TryGetPlayer(out Player player);
         DynamicData playerData = DynamicData.For(player);
-        Vector2 origin = playerData.Get<Vector2>("boostTarget");
-        if(playerData.Get(QUALITYOFLIFEUPDATE) is bool a && a) {
+        Vector2 origin = player.boostTarget;
+        if(VortexHelperModule.SessionProperties.BoosterQoL) {
             yield return null;
-            player.DashDir = playerData.Get<Vector2>("lastAim"); 
+            player.DashDir = player.lastAim;
         }
 
         Vector2 earlyExitBoost = Vector2.Zero;
@@ -480,7 +462,7 @@ public class PurpleBooster : Entity
             t = Calc.Approach(t, 1.0f, Engine.DeltaTime * 1.5f);
             Vector2 vec = origin + Vector2.UnitY * 6f + player.DashDir * 60f * (float) Math.Sin(t * Math.PI);
             
-            if(playerData.Get(QUALITYOFLIFEUPDATE) is bool b && b)
+            if(VortexHelperModule.SessionProperties.BoosterQoL)
             {
                 if(t == 1f)
                 {
@@ -512,22 +494,19 @@ public class PurpleBooster : Entity
         }
 
         player.LiftSpeed += 120f * -player.DashDir;
-        PurpleBoosterExplodeLaunch(player, playerData, player.Center - player.DashDir, origin);
+        PurpleBoosterExplodeLaunch(player, player.Center - player.DashDir, origin);
     }
 
-    public static void PurpleDashingEnd()
+    public static void PurpleDashingEnd(Player player)
     {
-        Util.TryGetPlayer(out Player player);
-        DynamicData playerData = DynamicData.For(player);
-        playerData.Set(QUALITYOFLIFEUPDATE, false);
+        VortexHelperModule.SessionProperties.BoosterQoL = false;
     }
-    public static void PurpleBoosterExplodeLaunch(Player player, DynamicData playerData, Vector2 from, Vector2? origin, float factor = 1f)
+    public static void PurpleBoosterExplodeLaunch(Player player, Vector2 from, Vector2? origin, float factor = 1f)
     {
-        bool QoL = playerData?.Get(QUALITYOFLIFEUPDATE) is bool b && b;
+        bool QoL = VortexHelperModule.SessionProperties.BoosterQoL;
         Input.Rumble(RumbleStrength.Strong, RumbleLength.Medium);
         Celeste.Freeze(QoL ? 0.05f : 0.1f);
-        player_LaunchApproachX.SetValue(player, null);
-        //playerData.Set("launchApproachX", new float?()); TEMPORARY - MonoMod has a bug rn that crashes if you use DynamicData setting on a Nullable`1
+        player.launchApproachX = null;
         Level level = player.SceneAs<Level>();
 
         if (origin is not null)
@@ -549,8 +528,7 @@ public class PurpleBooster : Entity
         if (!player.Inventory.NoRefills)
             player.RefillDash();
         player.RefillStamina();
-        if (QoL && playerData?.Get("dashCooldownTimer") is float f)
-            playerData.Set("dashCooldownTimer", f > 0.06f ? 0.06f : f);
+        player.dashCooldownTimer = Math.Min(player.dashCooldownTimer, 0.06f);
         player.StateMachine.State = Player.StLaunch;
         player.Speed *= factor;
     }
@@ -578,10 +556,10 @@ public class PurpleBooster : Entity
             orig(self, position, spriteMode);
 
             // Custom Purple Booster State
-            VortexHelperModule.PurpleBoosterState = self.StateMachine.AddState(PurpleBoostUpdate, PurpleBoostCoroutine, PurpleBoostBegin, PurpleBoostEnd);
+            VortexHelperModule.PurpleBoosterState = self.StateMachine.AddState<Player>("VortexHelper/PurpleBoost", PurpleBoostUpdate, PurpleBoostCoroutine, PurpleBoostBegin, PurpleBoostEnd);
 
             // Custom Purple Booster State (Arc Motion)
-            VortexHelperModule.PurpleBoosterDashState = self.StateMachine.AddState(PurpleDashingUpdate, PurpleDashingCoroutine, PurpleDashingBegin, PurpleDashingEnd);
+            VortexHelperModule.PurpleBoosterDashState = self.StateMachine.AddState<Player>("VortexHelper/PurpleDash", PurpleDashingUpdate, PurpleDashingCoroutine, PurpleDashingBegin, PurpleDashingEnd);
         }
 
         private static void Player_WallJumpCheck(ILContext il)
@@ -590,23 +568,12 @@ public class PurpleBooster : Entity
             if (cursor.TryGotoNext(MoveType.After, i => i.MatchCallvirt<Player>("get_DashAttacking")))
             {
                 cursor.Emit(OpCodes.Ldarg_0);
-                cursor.EmitDelegate<Func<bool, Player, bool>>((b, p) =>
-                {
-                    if (b) return true;
-                    try { if (DynamicData.For(p).TryGet<bool>(QUALITYOFLIFEUPDATE, out bool c) && c) return true; }
-                    catch (NullReferenceException) { return false; }
-                    return false;
-                });
+                cursor.EmitDelegate<Func<bool, Player, bool>>((b, p) => b || VortexHelperModule.SessionProperties.BoosterQoL);
             }
             if(cursor.TryGotoNext(MoveType.After, i => i.MatchLdcR4(-1) && i.Next.MatchCeq()))
             {
                 cursor.Emit(OpCodes.Ldarg_0);
-                cursor.EmitDelegate<Func<float, Player, float>>((f, p) =>
-                {
-                    try { if (DynamicData.For(p).TryGet<bool>(QUALITYOFLIFEUPDATE, out bool c) && c) return p.DashDir.Y; }
-                    catch (NullReferenceException) { return f; }
-                    return f;
-                });
+                cursor.EmitDelegate<Func<float, Player, float>>((f, p) => VortexHelperModule.SessionProperties.BoosterQoL ? p.DashDir.Y : f);
             }
 
 

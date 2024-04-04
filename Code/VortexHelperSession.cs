@@ -1,4 +1,6 @@
-﻿namespace Celeste.Mod.VortexHelper;
+﻿using Celeste.Mod.VortexHelper.Entities;
+
+namespace Celeste.Mod.VortexHelper;
 
 public class VortexHelperSession : EverestModuleSession
 {
@@ -8,4 +10,6 @@ public class VortexHelperSession : EverestModuleSession
     }
 
     public SwitchBlockColor SessionSwitchBlockColor { get; set; } = SwitchBlockColor.Blue;
+
+    internal bool BoosterQoL { get; set; } = false;
 }
