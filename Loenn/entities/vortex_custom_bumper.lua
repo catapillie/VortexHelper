@@ -17,6 +17,12 @@ vortexCustomBumper.fieldInformation = {
     style = {
         options = styles,
         editable = false
+    },
+    particleColor1 = {
+        fieldType = "color"
+    },
+    particleColor2 = {
+        fieldType = "color"
     }
 }
 
@@ -28,7 +34,10 @@ for _, style in ipairs(styles) do
             style = style,
             notCoreMode = false,
             wobble = true,
-            sprite = ""
+            sprite = "",
+            useCustomParticleColors = false,
+            particleColor1 = (style == "Orange" and "cc9747") or "5dcc47",
+            particleColor2 = (style == "Orange" and "ffdfc4") or "c4ffc9"
         }
     }
     table.insert(vortexCustomBumper.placements, placement)

@@ -35,9 +35,12 @@ public class VortexBumper : Entity
     private readonly bool notCoreMode, wobble;
 
     public VortexBumper(EntityData data, Vector2 offset)
-        : this(data.Position + offset, data.FirstNodeNullable(offset), data.Attr("style", "Green"), data.Bool("notCoreMore"), data.Bool("wobble", true), data.Attr("sprite").Trim().TrimEnd('/')) { }
+        : this(data.Position + offset, data.FirstNodeNullable(offset), data.Attr("style", "Green"), data.Bool("notCoreMore"),
+              data.Bool("wobble", true), data.Attr("sprite").Trim().TrimEnd('/'),
+              data.Bool("useCustomParticleColors"), data.HexColor("particleColor1"), data.HexColor("particleColor2")) { }
 
-    public VortexBumper(Vector2 position, Vector2? node, string style, bool notCoreMode, bool wobble, string customSpritePath)
+    public VortexBumper(Vector2 position, Vector2? node, string style, bool notCoreMode, bool wobble, string customSpritePath,
+        bool useCustomParticleColors, Color particleColor, Color particleColor2)
         : base(position)
     {
         this.Collider = new Circle(12f);
@@ -49,21 +52,36 @@ public class VortexBumper : Entity
         if (!string.IsNullOrEmpty(customSpritePath))
             this.sprite = BuildCustomSprite(customSpritePath, style.ToLower());
 
+        // Custom particle colours support
+        if (useCustomParticleColors)
+        {
+            p_ambiance = new(Bumper.P_Ambience)
+            {
+                Color = particleColor,
+                Color2 = particleColor2
+            };
+            p_launch = new(Bumper.P_Launch)
+            {
+                Color = p_ambiance.Color,
+                Color2 = p_ambiance.Color2
+            };
+        }
+
         switch (style)
         {
             default:
             case "Green":
                 this.sprite ??= VortexHelperModule.VortexBumperSpriteBank.Create("greenBumper");
                 this.twoDashes = true;
-                this.p_ambiance = P_GreenAmbience;
-                this.p_launch = P_GreenLaunch;
+                this.p_ambiance ??= P_GreenAmbience;
+                this.p_launch ??= P_GreenLaunch;
                 break;
 
             case "Orange":
                 this.sprite ??= VortexHelperModule.VortexBumperSpriteBank.Create("orangeBumper");
                 this.oneUse = true;
-                this.p_ambiance = P_OrangeAmbience;
-                this.p_launch = P_OrangeLaunch;
+                this.p_ambiance ??= P_OrangeAmbience;
+                this.p_launch ??= P_OrangeLaunch;
                 break;
         }
         this.notCoreMode = notCoreMode;
