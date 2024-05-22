@@ -10,7 +10,8 @@ purpleBooster.placements = {
         name = "purple",
         data = {
             lavender = false,
-            QoL = true
+            QoL = true,
+            spriteOverride = ""
         }
     },
     {
