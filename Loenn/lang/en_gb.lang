@@ -87,6 +87,9 @@ entities.VortexHelper/VortexCustomBumper.attributes.description.style=Alters the
 entities.VortexHelper/VortexCustomBumper.attributes.description.notCoreMode=Whether this bumper's style should remain the same, independently of the current Core Mode.
 entities.VortexHelper/VortexCustomBumper.attributes.description.wobble=Allows this bumper to wobble around and react to the player bouncing on it.
 entities.VortexHelper/VortexCustomBumper.attributes.description.sprite=Custom sprite path for this bumper that leads to custom frames.\nThe frame count must match the one from the original skin, and the files need to have this bumper's style as their name (all lowercase), + the frame index.\nFor instance: green00.png, green01.png, green02.png, etc... given that this bumper uses the green style.\nThe sprites must be located somewhere in the Gameplay atlas (somewhere in Graphics/Atlases/Gameplay/).\n\nExemple: objects/myMap/myCustomBumper\n..should be valid if there exists files whose paths are Graphics/Atlases/Gameplay/objects/myMap/myCustomBumper/<style>00.png, etc... (<style> is this bumper's style).
+entities.VortexHelper/VortexCustomBumper.attributes.description.useCustomParticleColors=Allows this bumper to use custom colors for its particle effects.
+entities.VortexHelper/VortexCustomBumper.attributes.description.particleColor1=Custom primary color for particle effects.\nOnly used when "Use Custom Particle Colors" is checked.
+entities.VortexHelper/VortexCustomBumper.attributes.description.particleColor2=Custom secondary color for particle effects.\nOnly used when "Use Custom Particle Colors" is checked.
 
 # Color Switch Trigger
 triggers.VortexHelper/ColorSwitchTrigger.placements.name.color_switch_trigger=Color Switch Trigger
