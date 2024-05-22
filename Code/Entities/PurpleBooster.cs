@@ -49,17 +49,38 @@ public class PurpleBooster : Entity
     private readonly SoundSource loopingSfx;
     public readonly bool QoL;
     public PurpleBooster(EntityData data, Vector2 offset)
-        : this(data.Position + offset) {
+        : this(data.Position + offset, data.Attr("spriteOverride", null)) {
         QoL = data.Bool("QoL");
     }
 
-    public PurpleBooster(Vector2 position)
+    public PurpleBooster(Vector2 position, string spriteOverride)
         : base(position)
     {
         this.Depth = Depths.Above;
         this.Collider = new Circle(10f, 0f, 2f);
-
-        this.sprite = VortexHelperModule.PurpleBoosterSpriteBank.Create("purpleBooster");
+        if (string.IsNullOrWhiteSpace(spriteOverride))
+        {
+            spriteOverride = spriteOverride.Trim().TrimEnd('/') + "/";
+            this.sprite = new Sprite(GFX.Game, spriteOverride);
+            sprite.CenterOrigin();
+            sprite.Add("appear", "appear", 0.04f);
+            sprite.AddLoop("loop", "loop", 0.1f);
+            sprite.AddLoop("inside", "inside", 0.1f);
+            sprite.AddLoop("spin", "spin", 0.1f);
+            sprite.Add("appear", "appear", 0.04f);
+            this.linkSegCenter = GFX.Game[spriteOverride + "link03"];
+            this.linkSegCenterOutline = GFX.Game[spriteOverride + "link02"];
+            this.linkSeg = GFX.Game[spriteOverride + "link01"];
+            this.linkSegOutline = GFX.Game[spriteOverride + "link00"];
+        }
+        else
+        {
+            this.sprite = VortexHelperModule.PurpleBoosterSpriteBank.Create("purpleBooster");
+            this.linkSegCenter = GFX.Game["objects/VortexHelper/slingBooster/link03"];
+            this.linkSegCenterOutline = GFX.Game["objects/VortexHelper/slingBooster/link02"];
+            this.linkSeg = GFX.Game["objects/VortexHelper/slingBooster/link01"];
+            this.linkSegOutline = GFX.Game["objects/VortexHelper/slingBooster/link00"];
+        }
         Add(this.sprite);
 
         Add(new PlayerCollider(OnPlayer));
@@ -69,11 +90,6 @@ public class PurpleBooster : Entity
         {
             this.sprite.Scale = Vector2.One * (1f + f * 0.25f);
         }));
-
-        this.linkSegCenter = GFX.Game["objects/VortexHelper/slingBooster/link03"];
-        this.linkSegCenterOutline = GFX.Game["objects/VortexHelper/slingBooster/link02"];
-        this.linkSeg = GFX.Game["objects/VortexHelper/slingBooster/link01"];
-        this.linkSegOutline = GFX.Game["objects/VortexHelper/slingBooster/link00"];
 
         Add(this.dashRoutine = new Coroutine(removeOnComplete: false));
         Add(this.dashListener = new DashListener());
