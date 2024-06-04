@@ -134,6 +134,9 @@ public class BowlPuffer : Actor
             OnHitSpring = HitSpring,
             OnHitSpinner = HitSpinner,
             SpeedGetter = () => this.Speed,
+            SpeedSetter = delegate(Vector2 speed) {
+                this.Speed = speed;
+            },
         });
 
         this.onCollideH = OnCollideH;
