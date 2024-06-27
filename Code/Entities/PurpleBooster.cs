@@ -58,7 +58,7 @@ public class PurpleBooster : Entity
     {
         this.Depth = Depths.Above;
         this.Collider = new Circle(10f, 0f, 2f);
-        if (string.IsNullOrWhiteSpace(spriteOverride))
+        if (!string.IsNullOrWhiteSpace(spriteOverride))
         {
             spriteOverride = spriteOverride.Trim().TrimEnd('/') + "/";
             this.sprite = new Sprite(GFX.Game, spriteOverride);
