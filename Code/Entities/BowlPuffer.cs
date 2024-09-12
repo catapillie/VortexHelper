@@ -134,6 +134,7 @@ public class BowlPuffer : Actor
             OnHitSpring = HitSpring,
             OnHitSpinner = HitSpinner,
             SpeedGetter = () => this.Speed,
+            SpeedSetter = (speed) => this.Speed = speed,
         });
 
         this.onCollideH = OnCollideH;
