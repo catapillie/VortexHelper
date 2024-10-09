@@ -3,14 +3,42 @@ local drawableSprite = require "structs.drawable_sprite"
 local lilly = {}
 
 lilly.name = "VortexHelper/Lilly"
-lilly.minimumSize = {24, 24}
-lilly.canResize = {false, true}
+lilly.minimumSize = { 24, 24 }
+lilly.canResize = { false, true }
 
 lilly.fieldInformation = {
     maxLength = {
         fieldType = "integer",
         minimumValue = 0
-    }
+    },
+    idleColor = {
+        fieldType = "color"
+    },
+    climbedOnColor = {
+        fieldType = "color"
+    },
+    dashColor = {
+        fieldType = "color"
+    },
+    retractColor = {
+        fieldType = "color"
+    },
+    idleAltColor = {
+        fieldType = "color"
+    },
+    climbedOnAltColor = {
+        fieldType = "color"
+    },
+    horrifiedColor = {
+        fieldType = "color"
+    },
+}
+
+lilly.fieldOrder = {
+    "x", "y", "width", "height",
+    "maxLength", "spritesDir",
+    "idleColor", "climbedOnColor", "dashColor", "retractColor",
+    "idleAltColor", "climbedOnAltColor", "horrifiedColor"
 }
 
 lilly.placements = {
@@ -19,16 +47,34 @@ lilly.placements = {
         data = {
             width = 24,
             height = 24,
-            maxLength = 64
+            maxLength = 64,
+            spriteDir = "",
+            idleColor = "0061ff",
+            climbedOnColor = "ff38f1",
+            dashColor = "ff0033",
+            retractColor = "4800ff",
+            idleAltColor = "00d0ff",
+            climbedOnAltColor = "f432ff",
+            horrifiedColor = "bc51ff",
         }
     }
 }
 
-local block = "objects/VortexHelper/squareBumperNew/block00"
-local face = "objects/VortexHelper/squareBumperNew/face12"
-local armend = "objects/VortexHelper/squareBumperNew/armend"
-local arm = "objects/VortexHelper/squareBumperNew/arm00"
-local color = {0.0, 208 / 255, 1.0, 1.0}
+local defaultSpriteDir = "objects/VortexHelper/squareBumperNew"
+
+local block, face, armend, arm
+local color
+
+local function reloadSprites(entity)
+    local spriteDir = (entity.spriteDir ~= "" and entity.spriteDir) and entity.spriteDir or defaultSpriteDir
+
+    block = spriteDir .. "/block00"
+    face = spriteDir .. "/face12"
+    armend = spriteDir .. "/armend"
+    arm = spriteDir .. "/arm00"
+
+    color = entity.idleColor or { 0.0, 208 / 255, 1.0, 1.0 }
+end
 
 local function addBlockSprites(sprites, entity, h, armLength)
     for i = 0, h - 1 do
@@ -75,6 +121,7 @@ function lilly.sprite(room, entity)
     local tileHeight = math.floor(height / 8)
     local armLength = entity.maxLength or 64
 
+    reloadSprites(entity)
     local sprites = {}
 
     x = 16 + armLength

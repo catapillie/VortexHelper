@@ -62,6 +62,8 @@ entities.VortexHelper/FloorBooster.attributes.description.notAttached=If ticked,
 # Lilly
 entities.VortexHelper/Lilly.placements.name.lilly=Lilly
 entities.VortexHelper/Lilly.attributes.description.maxLength=The maximum distance at which this Lilly's arms can extend.
+entities.VortexHelper/Lilly.attributes.description.spriteDir=Custom sprite path for this Lilly that leads to custom frames.\nThe frame count and image names must match the ones from the original skin.\nFor instance: face00.png, face01.png, face02.png, ..., arm00.png, arm01.png, etc.\nThe sprites must be located somewhere in the Gameplay atlas (somewhere in Graphics/Atlases/Gameplay/).\n\nExample: objects/myMap/myCustomLilly\n..should be valid if there exists files whose paths are Graphics/Atlases/Gameplay/objects/myMap/myCustomLilly/face00.png, etc.
+
 
 # Puffer Barrier
 entities.VortexHelper/PufferBarrier.placements.name.puffer_barrier=Puffer Barrier
