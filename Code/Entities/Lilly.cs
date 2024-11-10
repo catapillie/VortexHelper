@@ -54,15 +54,15 @@ public class Lilly : Solid
     public const float ArmSpeed = 240;
     public const float ArmSpeedRetract = 112;
 
-    public static readonly Color IdleColor = Calc.HexToColor("0061ff");
-    public static readonly Color ClimbedOnColor = Calc.HexToColor("ff38f1");
-    public static readonly Color DashColor = Calc.HexToColor("ff0033");
-    public static readonly Color RetractColor = Calc.HexToColor("4800ff");
-    public static readonly Color IdleAltColor = Calc.HexToColor("00d0ff");
-    public static readonly Color ClimbedOnAltColor = Calc.HexToColor("f432ff");
-    public static readonly Color HorrifiedColor = Calc.HexToColor("bc51ff");
+    private readonly Color idleColor = Calc.HexToColor("0061ff");
+    private readonly Color climbedOnColor = Calc.HexToColor("ff38f1");
+    private readonly Color dashColor = Calc.HexToColor("ff0033");
+    private readonly Color retractColor = Calc.HexToColor("4800ff");
+    private readonly Color idleAltColor = Calc.HexToColor("00d0ff");
+    private readonly Color climbedOnAltColor = Calc.HexToColor("f432ff");
+    private readonly Color horrifiedColor = Calc.HexToColor("bc51ff");
 
-    private Color colorTo = IdleColor, colorFrom = IdleColor;
+    private Color colorTo = Calc.HexToColor("0061ff"), colorFrom = Calc.HexToColor("0061ff"); // IdleColor
     private float colorLerp = 1f;
 
     public enum FaceState
@@ -108,13 +108,17 @@ public class Lilly : Solid
     private readonly List<StaticMover> rightStaticMovers = new();
 
     public Lilly(EntityData data, Vector2 offset)
-        : this(data.Position + offset, data.Height, data.Int("maxLength")) { }
+        : this(data.Position + offset, data.Height, data.Int("maxLength"), data.Attr("spriteDir", "").Trim().TrimEnd('/'),
+            data.HexColor("idleColor", Calc.HexToColor("0061ff")), data.HexColor("climbedOnColor", Calc.HexToColor("ff38f1")), data.HexColor("dashColor", Calc.HexToColor("ff0033")), data.HexColor("retractColor", Calc.HexToColor("4800ff")),
+            data.HexColor("idleAltColor", Calc.HexToColor("00d0ff")), data.HexColor("climbedOnAltColor", Calc.HexToColor("f432ff")), data.HexColor("horrifiedColor", Calc.HexToColor("bc51ff")))
+    { }
 
-    public Lilly(Vector2 position, int height, int maxLength)
+    public Lilly(Vector2 position, int height, int maxLength, string spriteDir,
+        Color idleColor, Color climbedOnColor, Color dashColor, Color retractColor, Color idleAltColor, Color climbedOnAltColor, Color horrifiedColor)
         : base(position, 24, height, true)
     {
         this.SurfaceSoundIndex = SurfaceIndex.CassetteBlock;
-        this.arm = GFX.Game.GetAtlasSubtextures("objects/VortexHelper/squareBumperNew/arm");
+        this.arm = GFX.Game.GetAtlasSubtextures(string.IsNullOrEmpty(spriteDir) ? "objects/VortexHelper/squareBumperNew/arm" : spriteDir + "/arm");
 
         this.maxLength = Math.Abs(maxLength);
 
@@ -125,10 +129,21 @@ public class Lilly : Solid
             Position = middle
         });
 
-        this.face = VortexHelperModule.LillySpriteBank.Create("lillyFace");
+        this.idleColor = idleColor;
+        this.climbedOnColor = climbedOnColor;
+        this.dashColor = dashColor;
+        this.retractColor = retractColor;
+        this.idleAltColor = idleAltColor;
+        this.climbedOnAltColor = climbedOnAltColor;
+        this.horrifiedColor = horrifiedColor;
+        this.colorFrom = this.colorTo = this.idleColor;
+
+        this.face = string.IsNullOrEmpty(spriteDir) ? VortexHelperModule.LillySpriteBank.Create("lillyFace") : BuildCustomFaceSprite(spriteDir);
         this.face.Position = middle + Vector2.UnitY;
-        this.face.Color = IdleColor;
+        this.face.Color = this.idleColor;
         Add(this.face);
+
+        if (!string.IsNullOrEmpty(spriteDir)) InitializeTextures(spriteDir);
 
         this.OnDashCollide = OnDashed;
 
@@ -137,6 +152,40 @@ public class Lilly : Solid
             Position = middle,
             Visible = false
         });
+    }
+
+    private static Sprite BuildCustomFaceSprite(string path)
+    {
+        Sprite faceSprite = new Sprite(GFX.Game, path + "/");
+
+        // <Loop id="idle" path="face" frames="0"/>
+        faceSprite.AddLoop("idle", "face", 0f, 0);
+        // <Anim id="idle_climb" path="face" frames="1-3" delay="0.08"/>
+        faceSprite.Add("idle_climb", "face", 0.08f, 1, 2, 3);
+        // <Anim id="climb_idle" path="face" frames="2,1,0" delay="0.08" goto="idle"/>
+        faceSprite.Add("climb_idle", "face", 0.08f, "idle", 2, 1, 0);
+
+        // <Anim id="dashed" path="face" frames="4" delay="0.5" goto="dash"/>
+        faceSprite.Add("dashed", "face", 0.5f, "dash", 4);
+        // <Loop id="dash" path="face" frames="5,6" delay="0.08"/>
+        faceSprite.AddLoop("dash", "face", 0.08f, 5, 6);
+
+        // <Anim id="retract" path="face" frames="7-9" delay="0.08"/>
+        faceSprite.Add("retract", "face", 0.08f, 7, 8, 9);
+        // <Anim id="end_retract" path="face" frames="10-12" delay="0.08" goto="idle_alt"/>
+        faceSprite.Add("end_retract", "face", 0.08f, "idle_alt", 10, 11, 12);
+
+        // <Loop id="idle_alt" path="face" frames="12" delay="0.08"/>
+        faceSprite.AddLoop("idle_alt", "face", 0.08f, 12);
+        // <Loop id="climb_alt" path="face" frames="13" delay="0.08"/>
+        faceSprite.AddLoop("climb_alt", "face", 0.08f, 13);
+
+        // <Anim id="horrified" path="face" frames="14,15,16,15,16,15,16,15,16,15,16,15,16,17,18,0" delay="0.06"/>
+        faceSprite.Add("horrified", "face", 0.06f, 14, 15, 16, 15, 16, 15, 16, 15, 16, 15, 16, 15, 16, 17, 18, 0);
+
+        faceSprite.JustifyOrigin(0.5f, 0.5f);
+        faceSprite.Play("idle");
+        return faceSprite;
     }
 
     private DashCollisionResults OnDashed(Player player, Vector2 dir)
@@ -154,7 +203,7 @@ public class Lilly : Solid
         // Dashed in, shaking.
         this.faceState = FaceState.Dash;
         this.face.Play("dashed", true);
-        ChangeColor(DashColor);
+        ChangeColor(dashColor);
         StartShaking(0.375f);
         Audio.Play(CustomSFX.game_lilly_dashed, this.Center);
         yield return 0.5f;
@@ -236,7 +285,7 @@ public class Lilly : Solid
         this.faceState = FaceState.Retract;
         this.face.Play("retract");
         this.sfx.Play(CustomSFX.game_lilly_conveyor, "end", 0f);
-        ChangeColor(RetractColor);
+        ChangeColor(retractColor);
 
         float retractFactor = 0f;
         while (rightArmExtended || leftArmExtended)
@@ -293,7 +342,7 @@ public class Lilly : Solid
         this.sfx.Param("end", 1f);
         this.faceState = FaceState.IdleAlt;
         this.face.Play("end_retract");
-        ChangeColor(IdleAltColor);
+        ChangeColor(idleAltColor);
 
         this.armsExtended = false;
         RemoveArms(rightArmEnd, rightArm);
@@ -333,7 +382,7 @@ public class Lilly : Solid
         {
             this.faceState = FaceState.Horrified;
             this.face.Play("horrified");
-            ChangeColor(HorrifiedColor);
+            ChangeColor(horrifiedColor);
         }
 
         if (this.Activated || this.faceState == FaceState.Horrified)
@@ -344,25 +393,25 @@ public class Lilly : Solid
         {
             this.faceState = FaceState.ClimbedOn;
             this.face.Play("idle_climb");
-            ChangeColor(ClimbedOnColor);
+            ChangeColor(climbedOnColor);
         }
         else if (!ridden && this.faceState == FaceState.ClimbedOn)
         {
             this.faceState = FaceState.Idle;
             this.face.Play("climb_idle");
-            ChangeColor(IdleColor);
+            ChangeColor(idleColor);
         }
         else if (ridden && this.faceState == FaceState.IdleAlt)
         {
             this.faceState = FaceState.ClimbedOnAlt;
             this.face.Play("climb_alt");
-            ChangeColor(ClimbedOnAltColor);
+            ChangeColor(climbedOnAltColor);
         }
         else if (!ridden && this.faceState == FaceState.ClimbedOnAlt)
         {
             this.faceState = FaceState.IdleAlt;
             this.face.Play("idle_alt");
-            ChangeColor(IdleAltColor);
+            ChangeColor(idleAltColor);
         }
     }
 
@@ -465,13 +514,13 @@ public class Lilly : Solid
         this.Position = pos;
     }
 
-    public static void InitializeTextures()
+    public static void InitializeTextures(string path = "objects/VortexHelper/squareBumperNew")
     {
-        MTexture block00 = GFX.Game["objects/VortexHelper/squareBumperNew/block00"];
-        MTexture block01 = GFX.Game["objects/VortexHelper/squareBumperNew/block01"];
-        MTexture active_block00 = GFX.Game["objects/VortexHelper/squareBumperNew/active_block00"];
-        MTexture active_block01 = GFX.Game["objects/VortexHelper/squareBumperNew/active_block01"];
-        MTexture armend = GFX.Game["objects/VortexHelper/squareBumperNew/armend"];
+        MTexture block00 = GFX.Game[path + "/block00"];
+        MTexture block01 = GFX.Game[path + "/block01"];
+        MTexture active_block00 = GFX.Game[path + "/active_block00"];
+        MTexture active_block01 = GFX.Game[path + "/active_block01"];
+        MTexture armend = GFX.Game[path + "/armend"];
 
         for (int j = 0; j < 4; j++)
         {
