@@ -2,6 +2,7 @@
 using Celeste.Mod.VortexHelper.Misc;
 using Microsoft.Xna.Framework;
 using Monocle;
+using MonoMod.ModInterop;
 using System;
 using System.Reflection;
 
@@ -69,6 +70,8 @@ public class VortexHelperModule : EverestModule
         MiscHooks.Hook();
 
         Util.LoadDelegates();
+        
+        typeof(GravityHelperInterop.Imports).ModInterop();
     }
 
     public override void Unload()

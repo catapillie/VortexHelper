@@ -20,6 +20,7 @@ floorBooster.placements = {
         data = {
             width = 8,
             left = false,
+            ceiling = false,
             iceMode = false,
             speed = 110,
             noRefillOnIce = true,
@@ -32,6 +33,33 @@ floorBooster.placements = {
         data = {
             width = 8,
             left = true,
+            ceiling = false,
+            iceMode = false,
+            speed = 110,
+            noRefillOnIce = true,
+            notAttached = false
+        }
+    },
+    {
+        name = "right_ceiling",
+        placementType = "rectangle",
+        data = {
+            width = 8,
+            left = false,
+            ceiling = true,
+            iceMode = false,
+            speed = 110,
+            noRefillOnIce = true,
+            notAttached = false
+        }
+    },
+    {
+        name = "left_ceiling",
+        placementType = "rectangle",
+        data = {
+            width = 8,
+            left = true,
+            ceiling = true,
             iceMode = false,
             speed = 110,
             noRefillOnIce = true,
@@ -60,9 +88,11 @@ function floorBooster.sprite(room, entity)
     local sprites = {}
 
     local left = entity.left
+    local ceiling = entity.ceiling ~= nil and entity.ceiling
     local width = entity.width or 8
     local tileWidth = math.floor(width / 8)
-    local scale = left and 1 or -1
+    local xScale = left and 1 or -1
+    local yScale = ceiling and -1 or 1
     local offset = left and 0 or 8
 
     local leftTexture, middleTexture, rightTexture = getTextures(entity)
@@ -73,9 +103,9 @@ function floorBooster.sprite(room, entity)
     for i = 2, tileWidth - 1 do
         local middleSprite = drawableSprite.fromTexture(middleTexture, entity)
 
-        middleSprite:addPosition((i - 1) * 8 + offset, 0)
-        middleSprite:setScale(scale, 1)
-        middleSprite:setJustification(0.0, 0.0)
+        middleSprite:addPosition((i - 1) * 8 + offset, 4)
+        middleSprite:setScale(xScale, yScale)
+        middleSprite:setJustification(0.0, 0.5)
 
         table.insert(sprites, middleSprite)
     end
@@ -83,13 +113,13 @@ function floorBooster.sprite(room, entity)
     local leftSprite = drawableSprite.fromTexture(leftTexture, entity)
     local rightSprite = drawableSprite.fromTexture(rightTexture, entity)
 
-    leftSprite:addPosition(offset, 0)
-    leftSprite:setScale(scale, 1)
-    leftSprite:setJustification(0.0, 0.0)
+    leftSprite:addPosition(offset, 4)
+    leftSprite:setScale(xScale, yScale)
+    leftSprite:setJustification(0.0, 0.5)
 
-    rightSprite:addPosition((tileWidth - 1) * 8 + offset, 0)
-    rightSprite:setScale(scale, 1)
-    rightSprite:setJustification(0.0, 0.0)
+    rightSprite:addPosition((tileWidth - 1) * 8 + offset, 4)
+    rightSprite:setScale(xScale, yScale)
+    rightSprite:setJustification(0.0, 0.5)
 
     table.insert(sprites, leftSprite)
     table.insert(sprites, rightSprite)
@@ -99,6 +129,12 @@ end
 
 function floorBooster.rectangle(room, entity)
     return utils.rectangle(entity.x, entity.y, entity.width or 8, 8)
+end
+
+function floorBooster.flip(room, entity, horizontal, vertical)
+    if vertical then entity.ceiling = not entity.ceiling end
+    if horizontal then entity.left = not entity.left end
+    return true
 end
 
 return floorBooster

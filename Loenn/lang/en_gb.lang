@@ -50,10 +50,13 @@ entities.VortexHelper/DashBubble.attributes.description.spiked=Adds spikes to th
 entities.VortexHelper/DashBubble.attributes.description.singleUse=Makes this bubble usable only once.
 entities.VortexHelper/DashBubble.attributes.description.wobble=Allows this bubble to wobble around its position, and to react to the player bouncing on it.
 
-# Floor Booster
+# Floor/Ceiling Booster
 entities.VortexHelper/FloorBooster.placements.name.right=Floor Booster (Right)
 entities.VortexHelper/FloorBooster.placements.name.left=Floor Booster (Left)
+entities.VortexHelper/FloorBooster.placements.name.right_ceiling=Ceiling Booster (Right)
+entities.VortexHelper/FloorBooster.placements.name.left_ceiling=Ceiling Booster (Left)
 entities.VortexHelper/FloorBooster.attributes.description.left=Makes this Floor Booster push towards the left.
+entities.VortexHelper/FloorBooster.attributes.description.ceiling=Whether the Floor Booster should attach to the ceiling. Only applies to Gravity Helper.
 entities.VortexHelper/FloorBooster.attributes.description.iceMode=Whether the Floor Booster should ignore the current Core mode and default to ice variant.
 entities.VortexHelper/FloorBooster.attributes.description.speed=The speed of this Floor Booster.
 entities.VortexHelper/FloorBooster.attributes.description.noRefillOnIce=Whether the ice variant should prevent dash refills when stood on.
