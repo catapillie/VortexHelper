@@ -29,7 +29,7 @@ bowlPuffer.placements = {
 }
 
 bowlPuffer.texture = "objects/VortexHelper/pufferBowl/idle00"
-bowlPuffer.offset = {32, 35}
+bowlPuffer.offset = {0, 3}
 
 function bowlPuffer.selection(room, entity)
     return utils.rectangle((entity.x or 0) - 11, (entity.y or 0) - 11, 21, 19)

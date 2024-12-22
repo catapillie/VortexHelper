@@ -13,6 +13,13 @@ floorBooster.fieldInformation = {
     }
 }
 
+floorBooster.fieldOrder = {
+    "x", "y",
+    "width", "speed",
+    "iceMode", "left", "noRefillOnIce", "notAttached",
+    "ceiling"
+}
+
 floorBooster.placements = {
     {
         name = "right",
@@ -134,7 +141,7 @@ end
 function floorBooster.flip(room, entity, horizontal, vertical)
     if vertical then entity.ceiling = not entity.ceiling end
     if horizontal then entity.left = not entity.left end
-    return true
+    return vertical or horizontal
 end
 
 return floorBooster
