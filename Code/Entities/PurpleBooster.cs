@@ -254,6 +254,8 @@ public class PurpleBooster : Entity
     {
         base.Update();
 
+        var inverted = GravityHelperInterop.IsPlayerInverted();
+        
         this.actualLinkPercent = Calc.Approach(this.actualLinkPercent, this.linkPercent, 5f * Engine.DeltaTime);
 
         if (this.cannotUseTimer > 0f)
@@ -271,7 +273,10 @@ public class PurpleBooster : Entity
             Vector2 target = Vector2.Zero;
             Player entity = this.Scene.Tracker.GetEntity<Player>();
             if (entity is not null && CollideCheck(entity))
-                target = entity.Center + Booster.playerOffset - this.Position;
+            {
+                var playerOffset = new Vector2(Booster.playerOffset.X, inverted ? -Booster.playerOffset.Y : Booster.playerOffset.Y);
+                target = entity.Center + playerOffset - this.Position;
+            }
             this.sprite.Position = Calc.Approach(this.sprite.Position, target, 80f * Engine.DeltaTime);
         }
 
@@ -377,8 +382,10 @@ public class PurpleBooster : Entity
         Vector2 value = Input.Aim.Value * 3f;
         Vector2 vector = Calc.Approach(player.ExactPosition, boostTarget - player.Collider.Center + value, 80f * Engine.DeltaTime);
 
+        GravityHelperInterop.BeginOverride();
         player.MoveToX(vector.X, null);
         player.MoveToY(vector.Y, null);
+        GravityHelperInterop.EndOverride();
 
         if (Vector2.DistanceSquared(player.Center, boostTarget) >= 275f)
         {
@@ -403,9 +410,11 @@ public class PurpleBooster : Entity
 
     public static void PurpleBoostEnd(Player player)
     {
+        GravityHelperInterop.BeginOverride();
         Vector2 vector = (player.boostTarget - player.Collider.Center).Floor();
         player.MoveToX(vector.X, null);
         player.MoveToY(vector.Y, null);
+        GravityHelperInterop.EndOverride();
     }
 
     public static IEnumerator PurpleBoostCoroutine(Player player)
@@ -414,12 +423,12 @@ public class PurpleBooster : Entity
         player.StateMachine.State = VortexHelperModule.PurpleBoosterDashState;
     }
 
-    // Arc Motion
+    // Arc Motion 
     public static void PurpleDashingBegin(Player player)
     {
         Celeste.Freeze(0.05f); // this freeze makes fastbubbling much more lenient
         DynamicData playerData = DynamicData.For(player);
-        player.DashDir = Input.GetAimVector(player.Facing);
+        player.DashDir = GravityHelperInterop.InvertIfRequired(Input.GetAimVector(player.Facing));
         playerData.Set(POSSIBLE_EARLY_DASHSPEED, Vector2.Zero);
 
         foreach (PurpleBooster b in player.Scene.Tracker.GetEntities<PurpleBooster>())
@@ -469,14 +478,15 @@ public class PurpleBooster : Entity
         Vector2 origin = player.boostTarget;
         if(VortexHelperModule.SessionProperties.BoosterQoL) {
             yield return null;
-            player.DashDir = player.lastAim;
+            player.DashDir = GravityHelperInterop.InvertIfRequired(player.lastAim);
         }
 
         Vector2 earlyExitBoost = Vector2.Zero;
         while (t < 1f)
         {
             t = Calc.Approach(t, 1.0f, Engine.DeltaTime * 1.5f);
-            Vector2 vec = origin + Vector2.UnitY * 6f + player.DashDir * 60f * (float) Math.Sin(t * Math.PI);
+            float offset = GravityHelperInterop.IsPlayerInverted() ? -6f : 6f;
+            Vector2 vec = origin + Vector2.UnitY * offset + player.DashDir * 60f * (float) Math.Sin(t * Math.PI);
             
             if(VortexHelperModule.SessionProperties.BoosterQoL)
             {
@@ -484,7 +494,8 @@ public class PurpleBooster : Entity
                 {
                     // frame 0: mimics speed at launch exit exactly, Input.MoveX.Value == -Math.Sign(player.DashDir) ? 300 : 250
                     earlyExitBoost = 250f * -player.DashDir;
-                    Vector2 aim = Input.GetAimVector(player.Facing).EightWayNormal().Sign();
+                    Vector2 aim = GravityHelperInterop.InvertIfRequired(Input.GetAimVector(player.Facing));
+                    aim = aim.EightWayNormal().Sign();
                     if (aim.X == Math.Sign(earlyExitBoost.X)) earlyExitBoost.X *= 1.2f;
                     if (aim.Y == Math.Sign(earlyExitBoost.Y)) earlyExitBoost.Y *= 1.2f;
                 } else if(t > 0.93f)
@@ -505,7 +516,9 @@ public class PurpleBooster : Entity
                 player.StateMachine.State = Player.StNormal;
                 yield break;
             }
+            GravityHelperInterop.BeginOverride();
             player.MoveToX(vec.X); player.MoveToY(vec.Y);
+            GravityHelperInterop.EndOverride();
             yield return null;
         }
 
@@ -531,6 +544,8 @@ public class PurpleBooster : Entity
         level.Shake(0.15f);
 
         Vector2 vector = (player.Center - from).SafeNormalize(-Vector2.UnitY);
+        vector = GravityHelperInterop.InvertIfRequired(vector);
+        
         if (Math.Abs(vector.X) < 1f && Math.Abs(vector.Y) < 1f)
             vector *= 1.1f;
 
