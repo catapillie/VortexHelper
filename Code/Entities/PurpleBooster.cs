@@ -201,7 +201,7 @@ public class PurpleBooster : Entity
         this.linkVisible = player.StateMachine.State is Player.StDash or Player.StNormal;
         this.linkPercent = this.linkVisible ? 0.0f : 1.0f;
 
-        if (!this.linkVisible)
+        if (!this.linkVisible && !player.Dead)
             LaunchPlayerParticles(player, -dir, P_BurstExplode);
 
         while (SceneAs<Level>().Transitioning)
