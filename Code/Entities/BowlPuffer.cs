@@ -1,4 +1,5 @@
 ﻿using Celeste.Mod.Entities;
+using Celeste.Mod.VortexHelper.Misc;
 using Microsoft.Xna.Framework;
 using Monocle;
 using System;
@@ -341,7 +342,7 @@ public class BowlPuffer : Actor
 
     #endregion
 
-    #region Explosiong
+    #region Explosion
 
     private void Explode(bool playsound = true)
     {
@@ -764,6 +765,21 @@ public class BowlPuffer : Actor
     {
         this.puffer.Scale = this.scale * (1f + this.inflateWiggler.Value * 0.4f);
         this.puffer.FlipX = false;
+        
+        // gravity helper forces a scale change on the default Sprite
+        if (Get<Sprite>() is { } sprite) sprite.Scale.Y = Math.Abs(sprite.Scale.Y);
+        
+        // invert sprites if required
+        var inverted = GravityHelperInterop.IsActorInverted(this);
+        if (inverted)
+        {
+            this.puffer.Y *= -1;
+            this.pufferBowlTop.Y *= -1;
+            this.pufferBowlBottom.Y *= -1;
+            this.pufferBowlTop.Scale.Y *= -1;
+            this.pufferBowlBottom.Scale.Y *= -1;
+            this.puffer.Scale.Y *= -1;
+        }
 
         Vector2 position = this.Position;
         this.Position.Y -= 6.0f;
@@ -791,6 +807,16 @@ public class BowlPuffer : Actor
                 Vector2 p = this.Center + new Vector2((float) Math.Sin(a), -(float) Math.Cos(a)) * 16 - Vector2.UnitY * 5 - Vector2.UnitX;
                 Draw.Point(p, Color.Lerp(Color.OrangeRed, Color.LawnGreen, a / (float) Math.PI));
             }
+        }
+        
+        if (inverted)
+        {
+            this.puffer.Y *= -1;
+            this.pufferBowlTop.Y *= -1;
+            this.pufferBowlBottom.Y *= -1;
+            this.pufferBowlTop.Scale.Y *= -1;
+            this.pufferBowlBottom.Scale.Y *= -1;
+            this.puffer.Scale.Y *= -1;
         }
     }
 

@@ -32,6 +32,7 @@ public class FloorBooster : Entity
 
     public bool IceMode;
     public bool NoRefillsOnIce;
+    public bool Ceiling;
 
     private DisableMode disableMode;
 
@@ -41,9 +42,12 @@ public class FloorBooster : Entity
     public int MoveSpeed;
 
     public FloorBooster(EntityData data, Vector2 offset)
-        : this(data.Position + offset, data.Width, data.Bool("left"), data.Int("speed"), data.Bool("iceMode"), data.Bool("noRefillOnIce"), data.Bool("notAttached")) { }
+        : this(data.Position + offset, data.Width, data.Bool("left"), data.Int("speed"), data.Bool("iceMode"), data.Bool("noRefillOnIce"), data.Bool("notAttached"), data.Bool("ceiling")) { }
 
     public FloorBooster(Vector2 position, int width, bool left, int speed, bool iceMode, bool noRefillOnIce, bool notAttached)
+        : this(position, width, left, speed, iceMode, noRefillOnIce, notAttached, false) { }
+
+    public FloorBooster(Vector2 position, int width, bool left, int speed, bool iceMode, bool noRefillOnIce, bool notAttached, bool ceiling)
         : base(position)
     {
         this.Tag = Tags.TransitionUpdate;
@@ -54,8 +58,9 @@ public class FloorBooster : Entity
         this.IceMode = iceMode;
         this.MoveSpeed = (int) Calc.Max(0, speed);
         this.Facing = left ? Facings.Left : Facings.Right;
+        this.Ceiling = ceiling;
 
-        this.Collider = new Hitbox(width, 3, 0, 5);
+        this.Collider = new Hitbox(width, 3, 0, ceiling ? 0 : 5);
         if (!this.notCoreMode)
             Add(new CoreModeListener(OnChangeMode));
 
@@ -74,7 +79,7 @@ public class FloorBooster : Entity
             });
         }
 
-        this.tiles = BuildSprite(left);
+        this.tiles = BuildSprite(left, ceiling);
     }
 
     public void SetColor(Color color)
@@ -109,7 +114,7 @@ public class FloorBooster : Entity
             this.Visible = false;
     }
 
-    private List<Sprite> BuildSprite(bool left)
+    private List<Sprite> BuildSprite(bool left, bool ceiling)
     {
         var list = new List<Sprite>();
         for (int i = 0; i < this.Width; i += 8)
@@ -128,6 +133,8 @@ public class FloorBooster : Entity
             Sprite sprite = VortexHelperModule.FloorBoosterSpriteBank.Create("FloorBooster" + id);
             if (!left)
                 sprite.FlipX = true;
+            if (ceiling)
+                sprite.FlipY = true;
 
             sprite.Position = new Vector2(i, 0);
             list.Add(sprite);
@@ -151,11 +158,11 @@ public class FloorBooster : Entity
             this.idleSfx.Play(SFX.env_loc_09_conveyer_idle);
     }
 
-    private bool IsRiding(JumpThru jumpThru) => CollideCheckOutside(jumpThru, this.Position + Vector2.UnitY);
+    private bool IsRiding(JumpThru jumpThru) => CollideCheckOutside(jumpThru, this.Position + (this.Ceiling ? -Vector2.UnitY : Vector2.UnitY));
 
     private bool IsRiding(Solid solid)
     {
-        if (CollideCheckOutside(solid, this.Position + Vector2.UnitY))
+        if (CollideCheckOutside(solid, this.Position + (this.Ceiling ? -Vector2.UnitY : Vector2.UnitY)))
         {
             this.disableMode = (solid is CassetteBlock or SwitchBlock) ? DisableMode.ColorFade : DisableMode.Disappear;
             return true;
@@ -192,8 +199,10 @@ public class FloorBooster : Entity
         bool isUsed = false;
         base.Update();
 
-        if (player is not null && CollideCheck(player) && player.OnGround() && player.Bottom <= this.Bottom)
-            isUsed = true;
+        var matchGravity = this.Ceiling == GravityHelperInterop.IsPlayerInverted();
+        
+        if (matchGravity && player is not null && CollideCheck(player) && player.OnGround())
+            isUsed = this.Ceiling ? player.Top >= this.Top : player.Bottom <= this.Bottom;
 
         PlayActivateSfx(this.IceMode || !isUsed);
     }
@@ -224,7 +233,7 @@ public class FloorBooster : Entity
             return;
 
         this.idleSfx.Position = Calc.ClosestPointOnLine(this.Position, this.Position + new Vector2(this.Width, 0f), entity.Center) - this.Position;
-        this.idleSfx.Position.Y += 7;
+        if (!this.Ceiling) this.idleSfx.Position.Y += 7;
         this.activateSfx.Position = this.idleSfx.Position;
         this.idleSfx.UpdateSfxPosition(); this.activateSfx.UpdateSfxPosition();
     }
@@ -258,13 +267,18 @@ public class FloorBooster : Entity
             if (level.Transitioning)
                 return orig(self);
 
+            var playerInverted = GravityHelperInterop.IsPlayerInverted();
+            
             foreach (FloorBooster entity in self.Scene.Tracker.GetEntities<FloorBooster>())
             {
                 if (!entity.IceMode)
                     continue;
 
+                if (entity.Ceiling != playerInverted)
+                    continue;
+                
                 if (self.CollideCheck(entity) && self.OnGround()
-                    && self.Bottom <= entity.Bottom
+                    && (entity.Ceiling ? self.Top >= entity.Top : self.Bottom <= entity.Bottom)
                     && entity.NoRefillsOnIce)
                     return false;
             }
@@ -289,8 +303,9 @@ public class FloorBooster : Entity
                 playerData.Set("lastFloorBooster", null);
 
             FloorBooster lastFloorBooster = playerData.Get<FloorBooster>("lastFloorBooster");
+            var playerInverted = GravityHelperInterop.IsPlayerInverted();
 
-            if (lastFloorBooster is not null && !self.CollideCheck(lastFloorBooster))
+            if (lastFloorBooster is not null && (lastFloorBooster.Ceiling != playerInverted || !self.CollideCheck(lastFloorBooster)))
             {
                 Vector2 vec = Vector2.UnitX
                     * playerData.Get<float>("floorBoosterSpeed")
@@ -310,8 +325,11 @@ public class FloorBooster : Entity
             {
                 if (entity.IceMode)
                     continue;
+                
+                if (entity.Ceiling != playerInverted)
+                    continue;
 
-                if (self.CollideCheck(entity) && self.OnGround() && self.StateMachine != Player.StClimb && self.Bottom <= entity.Bottom)
+                if (self.CollideCheck(entity) && self.OnGround() && self.StateMachine != Player.StClimb && (entity.Ceiling ? self.Top >= entity.Top : self.Bottom <= entity.Bottom))
                 {
                     if (!touchedFloorBooster)
                     {
@@ -349,14 +367,19 @@ public class FloorBooster : Entity
         {
             if (!Util.TryGetPlayer(out Player player))
                 return 1.0f;
+            
+            var playerInverted = GravityHelperInterop.IsPlayerInverted();
 
             foreach (FloorBooster entity in player.Scene.Tracker.GetEntities<FloorBooster>())
             {
                 if (!entity.IceMode)
                     continue;
+                
+                if (entity.Ceiling != playerInverted)
+                    continue;
 
                 if (player.CollideCheck(entity) && player.OnGround() && player.StateMachine != Player.StClimb
-                    && player.Bottom <= entity.Bottom)
+                    && (entity.Ceiling ? player.Top >= entity.Top : player.Bottom <= entity.Bottom))
                     return player.SceneAs<Level>().CoreMode is Session.CoreModes.Cold ? 0.4f : 0.2f;
             }
 
