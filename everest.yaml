@@ -1,5 +1,5 @@
 - Name: VortexHelper
-  Version: 1.2.17
+  Version: 1.2.18
   DLL: Code/bin/VortexHelper.dll
   Dependencies:
     - Name: EverestCore
