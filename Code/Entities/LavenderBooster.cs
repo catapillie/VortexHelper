@@ -67,7 +67,7 @@ public class LavenderBooster : Booster
             {
                 Audio.Play(SFX.game_05_redbooster_end, player.Center);
                 PurpleBooster.LaunchPlayerParticles(player, player.DashDir, P_BurstExplodeLavender);
-                VortexHelperModule.SessionProperties.BoosterQoL = false;
+                VortexHelperModule.SessionProperties.BoosterQoL = l.QoL;
                 VortexHelperModule.SessionProperties.BoosterLegacyGravityHelper = l.LegacyGravityHelper;
                 PurpleBooster.PurpleBoosterExplodeLaunch(player, self.Center - player.DashDir, null, -1f);
             }
