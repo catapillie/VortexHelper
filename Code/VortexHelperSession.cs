@@ -12,4 +12,5 @@ public class VortexHelperSession : EverestModuleSession
     public SwitchBlockColor SessionSwitchBlockColor { get; set; } = SwitchBlockColor.Blue;
 
     internal bool BoosterQoL { get; set; } = false;
+    internal bool BoosterLegacyGravityHelper { get; set; } = false;
 }

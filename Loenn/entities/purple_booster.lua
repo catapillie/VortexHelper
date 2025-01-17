@@ -11,6 +11,7 @@ purpleBooster.placements = {
         data = {
             lavender = false,
             QoL = true,
+            legacyGravityHelper = false,
             spriteOverride = ""
         }
     },
@@ -18,9 +19,15 @@ purpleBooster.placements = {
         name = "lavender",
         data = {
             lavender = true,
-            QoL = true
+            QoL = true,
+            legacyGravityHelper = false
         }
     }
+}
+
+purpleBooster.fieldOrder = {
+    "x", "y",
+    "lavender", "QoL", "spriteOverride", "legacyGravityHelper"
 }
 
 function purpleBooster.texture(room, entity)
