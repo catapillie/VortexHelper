@@ -17,11 +17,17 @@ public class LavenderBooster : Booster
 
     private readonly DynData<Booster> boosterData;
     private readonly bool QoL;
+    private readonly bool LegacyGravityHelper;
+    
     public LavenderBooster(EntityData data, Vector2 offset)
         : base(data.Position + offset, red: false)
     {
         this.boosterData = new DynData<Booster>(this);
         QoL = data.Bool("QoL", false);
+        
+        // Unlike most legacy settings, this defaults to false so that old maps used the "fixed" functionality.
+        // If an older map specifically wants the jank interaction, they will need to replace the entities and rerelease.
+        LegacyGravityHelper = data.Bool("legacyGravityHelper", false);
 
         Sprite oldSprite = this.boosterData.Get<Sprite>("sprite");
         Remove(oldSprite);
@@ -61,7 +67,8 @@ public class LavenderBooster : Booster
             {
                 Audio.Play(SFX.game_05_redbooster_end, player.Center);
                 PurpleBooster.LaunchPlayerParticles(player, player.DashDir, P_BurstExplodeLavender);
-                VortexHelperModule.SessionProperties.BoosterQoL = false;
+                VortexHelperModule.SessionProperties.BoosterQoL = l.QoL;
+                VortexHelperModule.SessionProperties.BoosterLegacyGravityHelper = l.LegacyGravityHelper;
                 PurpleBooster.PurpleBoosterExplodeLaunch(player, self.Center - player.DashDir, null, -1f);
             }
         }
